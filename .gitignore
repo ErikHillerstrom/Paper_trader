@@ -1,0 +1,18 @@
+# Virtual environment
+.venv/
+
+# Data & logs (personal trade data, not for version control)
+data/
+
+# PyCharm
+.idea/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Misc
+test
+files.zip
+*.egg-info/
