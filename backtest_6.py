@@ -57,6 +57,7 @@ SHORT_TAKE_PROFIT_PCT= 0.10   # take profit if price falls this much
 # ── Portfolio / capital limits ──
 TOTAL_CAPITAL        = 25_000  # total account size in USD
 MAX_POSITIONS        = 3      # maximum simultaneous open slots
+SEK_USD_RATE         = 0.095  # used when WATCHLIST = WATCHLIST_OMXS30 (1 SEK → USD)
 COMPOUNDING         = True    # True = position size grows/shrinks with equity
 POSITION_SIZE_USD    = TOTAL_CAPITAL / MAX_POSITIONS  # used only when COMPOUNDING=False
 
@@ -78,7 +79,16 @@ WATCHLIST_SP50 = [
     "AMGN","QCOM","SPGI","TXN","PFE",
 ]
 
-# Set to WATCHLIST_SP50 to backtest against the 50 largest S&P 500 companies
+# OMX Stockholm 30 — note: trades in SEK, strategy thresholds were tuned for US stocks
+WATCHLIST_OMXS30 = [
+    "ABB.ST","ALFA.ST","ASSA-B.ST","ATCO-A.ST","ATCO-B.ST","AZN.ST",
+    "BOL.ST","EPIA.ST","ERIC-B.ST","ESSITY-B.ST","EVO.ST","GETI-B.ST",
+    "HM-B.ST","HEXA-B.ST","HUSQ-B.ST","INVE-B.ST","LIFCO-B.ST","NDA-SE.ST",
+    "NIBE-B.ST","SAND.ST","SEB-A.ST","SHB-A.ST","SINCH.ST","SKA-B.ST",
+    "SKF-B.ST","SSAB-A.ST","SWED-A.ST","TEL2-B.ST","TELIA.ST","VOLV-B.ST",
+]
+
+# Set to WATCHLIST_SP50 or WATCHLIST_OMXS30 to use an alternative watchlist
 WATCHLIST = WATCHLIST_DEFAULT
 
 DATA_DIR        = Path("./data")
@@ -291,10 +301,13 @@ def simulate_trade(ticker: str, direction: str, entry_date: datetime,
     exit_date_str = exit_date.strftime("%Y-%m-%d") if isinstance(exit_date, datetime) \
                     else str(exit_date)[:10]
 
+    # Convert SEK prices to USD for display when using OMXS30
+    fx = SEK_USD_RATE if ticker.endswith(".ST") else 1.0
+
     return BTTrade(
         ticker=ticker, direction=direction,
-        entry_date=entry_date.strftime("%Y-%m-%d"), entry_price=round(entry_price, 2),
-        exit_date=exit_date_str, exit_price=round(exit_price, 2),
+        entry_date=entry_date.strftime("%Y-%m-%d"), entry_price=round(entry_price * fx, 2),
+        exit_date=exit_date_str, exit_price=round(exit_price * fx, 2),
         hold_days=days_held, pnl_pct=pnl_pct, pnl_usd=pnl_usd,
         exit_reason=exit_reason, signals=signal.signals_triggered,
         composite_score=signal.composite_score, is_macro_event=signal.is_macro_event,
