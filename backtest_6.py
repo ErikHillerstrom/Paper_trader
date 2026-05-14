@@ -40,14 +40,14 @@ CALL_PUT_RATIO_MIN   = 3.0
 VPIN_THRESHOLD       = 0.65
 
 # ── Long parameters ──
-LONG_SCORE_MIN       = 0.5   # minimum composite score to open a long
+LONG_SCORE_MIN       = 0.6   # minimum composite score to open a long
 LONG_MIN_SIGNALS     = 2      # minimum signals triggered
 LONG_HOLD_DAYS       = 3      # days to hold before time-exit
 LONG_STOP_LOSS_PCT   = 0.01   # stop out if price drops this much
 LONG_TAKE_PROFIT_PCT = 0.10   # take profit if price rises this much
 
 # ── Short parameters (tuned independently) ──
-SHORT_SCORE_MIN      = 0.5   # higher bar - shorts need stronger confirmation
+SHORT_SCORE_MIN      = 0.6   # higher bar - shorts need stronger confirmation
 SHORT_MIN_SIGNALS    = 2      # require at least 2 signals for shorts
 SHORT_HOLD_DAYS      = 2      # shorter hold - shorts can reverse fast
 SHORT_STOP_LOSS_PCT  = 0.01   # stop out if price rises this much
@@ -203,13 +203,13 @@ def compute_signals(ticker: str, date: datetime, history: pd.DataFrame):
         lt.append("vol_spike"); ls.append(min(today["Volume"] / (avg_vol * 3), 1.0))
 
     if block and not gap_down:
-        lt.append("block_trade"); ls.append(0.7)
+        lt.append("block_trade"); ls.append(0.5)
 
     if vpin_bull:
         lt.append("vpin_bullish"); ls.append(vpin)
 
     if gap_up:
-        lt.append("gap_up"); ls.append(0.6)
+        lt.append("gap_up"); ls.append(0.8)
 
     # ── SHORT signals (mirror) ──
     st, ss = [], []
@@ -223,16 +223,21 @@ def compute_signals(ticker: str, date: datetime, history: pd.DataFrame):
         st.append("vol_spike_down"); ss.append(min(today["Volume"] / (avg_vol * 3), 1.0))
 
     if block and not gap_up and close_pct < -0.005:
-        st.append("block_sell"); ss.append(0.7)
+        st.append("block_sell"); ss.append(0.5)
 
     if vpin_bear:
         st.append("vpin_bearish"); ss.append(vpin)
 
     if gap_down:
-        st.append("gap_down"); ss.append(0.6)
+        st.append("gap_down"); ss.append(0.8)
 
-    long_score  = round(sum(ls) / len(ls), 3) if ls else 0.0
-    short_score = round(sum(ss) / len(ss), 3) if ss else 0.0
+    # Count bonus: each signal beyond the minimum adds 0.04 (max +0.12)
+    long_base   = round(sum(ls) / len(ls), 3) if ls else 0.0
+    short_base  = round(sum(ss) / len(ss), 3) if ss else 0.0
+    long_bonus  = min(max(len(lt) - LONG_MIN_SIGNALS,  0) * 0.04, 0.12)
+    short_bonus = min(max(len(st) - SHORT_MIN_SIGNALS, 0) * 0.04, 0.12)
+    long_score  = round(min(long_base  + long_bonus,  1.0), 3)
+    short_score = round(min(short_base + short_bonus, 1.0), 3)
 
     long_sig  = BTSignal(ticker, date.strftime("%Y-%m-%d"), "long",  long_score,  lt, False) \
                 if long_score  >= LONG_SCORE_MIN  and len(lt) >= LONG_MIN_SIGNALS  else None
