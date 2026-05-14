@@ -55,18 +55,30 @@ SHORT_TAKE_PROFIT_PCT= 0.10   # take profit if price falls this much
 
 # ── Portfolio / capital limits ──
 TOTAL_CAPITAL        = 25_000  # total account size in USD
-MAX_POSITIONS        = 5      # maximum simultaneous open slots
+MAX_POSITIONS        = 3      # maximum simultaneous open slots
 COMPOUNDING         = True    # True = position size grows/shrinks with equity
 POSITION_SIZE_USD    = TOTAL_CAPITAL / MAX_POSITIONS  # used only when COMPOUNDING=False
 
 # If more than this many tickers signal same direction on one day = macro event
 MACRO_EVENT_THRESHOLD = 8
 
-WATCHLIST = [
+WATCHLIST_DEFAULT = [
     "NVDA","MSFT","AAPL","AMZN","META","GOOGL","TSLA","JPM",
     "XOM","PFE","MRNA","AMD","NFLX","CRM","INTC","BAC","GS",
     "ABBV","LLY","UNH","V","MA","AVGO","ORCL","ADBE",
 ]
+
+WATCHLIST_SP50 = [
+    "NVDA","AAPL","MSFT","AMZN","GOOGL","META","TSLA","AVGO",
+    "BRK-B","JPM","LLY","V","UNH","XOM","WMT","ORCL","MA",
+    "COST","NFLX","JNJ","HD","BAC","PG","ABBV","CRM","MRK",
+    "KO","AMD","ADBE","GS","NOW","T","MCD","PEP","DIS","IBM",
+    "CSCO","PM","TMO","RTX","AXP","INTU","CAT","VZ","ISRG",
+    "AMGN","QCOM","SPGI","TXN","PFE",
+]
+
+# Set to WATCHLIST_SP50 to backtest against the 50 largest S&P 500 companies
+WATCHLIST = WATCHLIST_DEFAULT
 
 DATA_DIR        = Path("./data")
 DATA_DIR.mkdir(exist_ok=True)
