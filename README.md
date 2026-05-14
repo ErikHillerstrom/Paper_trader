@@ -14,6 +14,7 @@ paper-trades those signals to validate strategy edge — no real money involved.
 | `backtest_6.py` | **Latest backtest.** Long/short replay with score segmentation analysis |
 | `monte_carlo_optimiser.py` | Walk-forward Monte Carlo parameter optimiser (5 in-sample years + OOS test) |
 | `report.py` | P&L summary, open positions, and matplotlib chart viewer |
+| `AWS_SETUP.md` | Step-by-step guide for hosting the script on AWS EC2 |
 | `paper_trader.py` | v1 paper trader (single-phase, kept for reference) |
 | `backtest.py` / `backtest_4.py` / `backtest_5.py` | Earlier backtest iterations (kept for reference) |
 
