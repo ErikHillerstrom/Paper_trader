@@ -41,22 +41,23 @@ CALL_PUT_RATIO_MIN   = 3.0
 VPIN_THRESHOLD       = 0.65
 
 # Long parameters
-LONG_SCORE_MIN       = 0.50
+LONG_SCORE_MIN       = 0.60
 LONG_MIN_SIGNALS     = 2
 LONG_HOLD_DAYS       = 3
 LONG_STOP_LOSS_PCT   = 0.01
 LONG_TAKE_PROFIT_PCT = 0.10
 
 # Short parameters
-SHORT_SCORE_MIN      = 0.5
+SHORT_SCORE_MIN      = 0.6
 SHORT_MIN_SIGNALS    = 2
 SHORT_HOLD_DAYS      = 2
+SHORT_SAME_DAY_EXIT  = True  # True = close shorts at market close on entry day
 SHORT_STOP_LOSS_PCT  = 0.01
 SHORT_TAKE_PROFIT_PCT= 0.10
 
 # Portfolio limits
 TOTAL_CAPITAL        = 25_000
-MAX_POSITIONS        = 5
+MAX_POSITIONS        = 3
 COMPOUNDING          = True   # True = position size grows/shrinks with equity
 POSITION_SIZE_USD    = TOTAL_CAPITAL / MAX_POSITIONS  # used only when COMPOUNDING=False
 
@@ -725,17 +726,97 @@ def run_schedule():
         schedule.run_pending()
         time.sleep(30)
 
+# ── Close same-day shorts ─────────────────────────────────────────────────────
+
+def run_close_shorts():
+    """
+    Run after US market close (22:25 Swedish / 16:25 ET).
+    Closes all short positions opened today when SHORT_SAME_DAY_EXIT is True.
+    """
+    if not SHORT_SAME_DAY_EXIT:
+        log.info("SHORT_SAME_DAY_EXIT is False — skipping close-shorts phase.")
+        return
+
+    log.info("=" * 60)
+    log.info(f"CLOSE SHORTS — {datetime.now().strftime('%Y-%m-%d %H:%M')} (after US close)")
+    log.info("=" * 60)
+
+    today_str = datetime.now().strftime("%Y-%m-%d")
+    trades    = load_json(TRADES_FILE)
+    changed   = False
+    closed    = []
+
+    for t in trades:
+        if t["status"] != "open" or t.get("direction") != "short":
+            continue
+        if t.get("entry_date") != today_str:
+            continue
+
+        current = get_current_price(t["ticker"])
+        if current is None:
+            log.warning(f"  {t['ticker']}: could not fetch price — leaving open")
+            continue
+
+        entry    = t["entry_price"]
+        stop_p   = entry * (1 + SHORT_STOP_LOSS_PCT)
+        target_p = entry * (1 - SHORT_TAKE_PROFIT_PCT)
+
+        if current >= stop_p:
+            exit_p, reason = stop_p, "closed_sl"
+        elif current <= target_p:
+            exit_p, reason = target_p, "closed_tp"
+        else:
+            exit_p, reason = current, "closed_time"
+
+        final_pct = (entry - exit_p) / entry * 100
+        pnl_usd   = round(t.get("position_usd", POSITION_SIZE_USD) * final_pct / 100, 2)
+
+        t["status"]     = reason
+        t["exit_date"]  = today_str
+        t["exit_price"] = round(exit_p, 4)
+        t["pnl_pct"]    = round(final_pct, 3)
+        t["pnl_usd"]    = pnl_usd
+        changed = True
+        closed.append(t)
+
+        col = Fore.GREEN if pnl_usd >= 0 else Fore.RED
+        log.info(f"  {col}[S] CLOSED {t['ticker']} [{reason.replace('closed_', '')}] "
+                 f"entry=${entry:.2f} exit=${exit_p:.2f} "
+                 f"P&L={final_pct:+.1f}% (${pnl_usd:+.2f}){Style.RESET_ALL}")
+
+    if not closed:
+        log.info("  No same-day shorts to close.")
+
+    if changed:
+        save_json(TRADES_FILE, trades)
+
+    date_str = datetime.now().strftime("%m/%d")
+    if closed:
+        lines = [f"CLOSED {t['ticker']} SHORT [{t['status'].replace('closed_', '')}] "
+                 f"{t['pnl_pct']:+.1f}% ${t['pnl_usd']:+.0f}"
+                 for t in closed]
+        all_trades   = load_json(TRADES_FILE)
+        total_pnl    = sum(t.get("pnl_usd", 0) for t in all_trades if t["status"] != "open")
+        total_equity = TOTAL_CAPITAL + total_pnl
+        lines.append(f"P&L ${total_pnl:+.0f} | Equity ${total_equity:,.0f}")
+        body = "\n".join(lines)
+    else:
+        body = "No same-day shorts closed."
+    send_notification(f"Close shorts {date_str}", body)
+
 # ── Entry point ───────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
-    if "--evening"  in sys.argv: run_evening_scan()
-    elif "--morning" in sys.argv: run_morning_open()
-    elif "--status"  in sys.argv: print_portfolio_summary()
-    elif "--schedule" in sys.argv: run_schedule()
+    if "--evening"      in sys.argv: run_evening_scan()
+    elif "--morning"    in sys.argv: run_morning_open()
+    elif "--close-shorts" in sys.argv: run_close_shorts()
+    elif "--status"     in sys.argv: print_portfolio_summary()
+    elif "--schedule"   in sys.argv: run_schedule()
     else:
         print(__doc__)
         print("Usage:")
-        print("  python paper_trader.py --evening    # after market close (22:30 Swedish)")
-        print("  python paper_trader.py --morning    # after market open  (15:35 Swedish)")
-        print("  python paper_trader.py --status     # check portfolio anytime")
-        print("  python paper_trader.py --schedule   # run on automatic schedule")
+        print("  python paper_trader.py --evening      # after market close (22:30 Swedish)")
+        print("  python paper_trader.py --morning      # after market open  (15:35 Swedish)")
+        print("  python paper_trader.py --close-shorts # after US close     (22:25 Swedish)")
+        print("  python paper_trader.py --status       # check portfolio anytime")
+        print("  python paper_trader.py --schedule     # run on automatic schedule")

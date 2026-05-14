@@ -124,6 +124,9 @@ NOTIFY_TO=you@gmail.com
 
 # Morning open — weekdays at 15:35 Stockholm
 35 15 * * 1-5 /home/ubuntu/venv/bin/python /home/ubuntu/paper_trader/paper_trader_1.py --morning >> /home/ubuntu/paper_trader/cron.log 2>&1
+
+# Close same-day shorts — weekdays at 22:25 Stockholm (after US market close, only runs if SHORT_SAME_DAY_EXIT=True)
+25 22 * * 1-5 /home/ubuntu/venv/bin/python /home/ubuntu/paper_trader/paper_trader_1.py --close-shorts >> /home/ubuntu/paper_trader/cron.log 2>&1
 ```
 
 Save and exit: **Ctrl+X** → **Y** → **Enter**
