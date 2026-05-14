@@ -50,6 +50,7 @@ LONG_TAKE_PROFIT_PCT = 0.10   # take profit if price rises this much
 SHORT_SCORE_MIN      = 0.6   # higher bar - shorts need stronger confirmation
 SHORT_MIN_SIGNALS    = 2      # require at least 2 signals for shorts
 SHORT_HOLD_DAYS      = 2      # shorter hold - shorts can reverse fast
+SHORT_SAME_DAY_EXIT  = True  # True = exit short at close of entry day
 SHORT_STOP_LOSS_PCT  = 0.01   # stop out if price rises this much
 SHORT_TAKE_PROFIT_PCT= 0.10   # take profit if price falls this much
 
@@ -262,7 +263,7 @@ def simulate_trade(ticker: str, direction: str, entry_date: datetime,
         stop_p   = entry_price * (1 - LONG_STOP_LOSS_PCT)
         target_p = entry_price * (1 + LONG_TAKE_PROFIT_PCT)
     else:
-        hold     = SHORT_HOLD_DAYS
+        hold     = 1 if SHORT_SAME_DAY_EXIT else SHORT_HOLD_DAYS
         stop_p   = entry_price * (1 + SHORT_STOP_LOSS_PCT)   # loss if price rises
         target_p = entry_price * (1 - SHORT_TAKE_PROFIT_PCT) # profit if price falls
 
