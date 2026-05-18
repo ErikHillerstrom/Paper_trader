@@ -91,6 +91,7 @@ WATCHLIST_OMXS30 = [
 # Set to WATCHLIST_SP50 or WATCHLIST_OMXS30 to use an alternative watchlist
 WATCHLIST = WATCHLIST_DEFAULT
 
+
 DATA_DIR        = Path("./data")
 DATA_DIR.mkdir(exist_ok=True)
 BT_TRADES_FILE  = DATA_DIR / "backtest_trades_ls.json"

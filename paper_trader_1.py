@@ -518,6 +518,7 @@ def run_morning_open():
         save_json(TRADES_FILE, trades)
 
     # Step 2: Fill queued signals at today's open
+    new_trades = []
     queue = load_json(QUEUE_FILE)
     if not queue:
         log.info("\nNo signals queued — nothing to open today")
