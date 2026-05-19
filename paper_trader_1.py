@@ -73,7 +73,7 @@ WATCHLIST = [
     "ABBV","LLY","UNH","V","MA","AVGO","ORCL","ADBE",
 ]
 
-DATA_DIR      = Path("./data")
+DATA_DIR      = Path(__file__).parent / "data"
 DATA_DIR.mkdir(exist_ok=True)
 TRADES_FILE   = DATA_DIR / "paper_trades.json"
 QUEUE_FILE    = DATA_DIR / "signal_queue.json"   # signals waiting for open price
