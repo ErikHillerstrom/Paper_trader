@@ -69,6 +69,11 @@ MACRO_EVENT_THRESHOLD = 8
 # pure volume signals (vol_spike + block only) that carry no directional edge
 REQUIRE_DIRECTIONAL = True
 
+# True = use 5-minute intraday bars for SL/TP simulation and skip the first
+# bar (09:30–09:35 ET) to avoid stop-outs from opening-minute noise.
+# NOTE: yfinance only provides 60 days of 5-min data — use --days 60 or less.
+INTRADAY_STOPS = False
+
 WATCHLIST_DEFAULT = [
     "NVDA","MSFT","AAPL","AMZN","META","GOOGL","TSLA","JPM",
     "XOM","PFE","MRNA","AMD","NFLX","CRM","INTC","BAC","GS",
@@ -173,6 +178,29 @@ def fetch_all_history(days_back: int) -> dict:
     log.info(f"  Loaded {len(history)} tickers\n")
     return history
 
+def fetch_intraday_history() -> dict:
+    """Fetch 5-minute bars for the last 60 days (yfinance limit)."""
+    log.info("Downloading 5-min intraday data for SL/TP simulation...")
+    raw = yf.download(
+        WATCHLIST,
+        period="60d",
+        interval="5m",
+        group_by="ticker",
+        auto_adjust=True,
+        progress=False,
+    )
+    history = {}
+    for ticker in WATCHLIST:
+        try:
+            df = raw[ticker].dropna(how="all").copy() if len(WATCHLIST) > 1 \
+                 else raw.dropna(how="all").copy()
+            df.index = pd.to_datetime(df.index).tz_localize(None)
+            history[ticker] = df
+        except Exception as e:
+            log.warning(f"  {ticker}: 5-min fetch failed - {e}")
+    log.info(f"  Loaded {len(history)} tickers (intraday)\n")
+    return history
+
 # ── Signal computation ─────────────────────────────────────────────────────────
 
 def compute_signals(ticker: str, date: datetime, history: pd.DataFrame):
@@ -272,8 +300,8 @@ def compute_signals(ticker: str, date: datetime, history: pd.DataFrame):
 
 def simulate_trade(ticker: str, direction: str, entry_date: datetime,
                    entry_price: float, history: pd.DataFrame,
-                   signal: BTSignal, pos_size: float = POSITION_SIZE_USD) -> BTTrade:
-    future      = history[history.index > pd.Timestamp(entry_date)].copy()
+                   signal: BTSignal, pos_size: float = POSITION_SIZE_USD,
+                   intraday: pd.DataFrame = None) -> BTTrade:
     exit_price  = entry_price
     exit_date   = entry_date
     exit_reason = "closed_time"
@@ -285,23 +313,60 @@ def simulate_trade(ticker: str, direction: str, entry_date: datetime,
         target_p = entry_price * (1 + LONG_TAKE_PROFIT_PCT)
     else:
         hold     = 1 if SHORT_SAME_DAY_EXIT else SHORT_HOLD_DAYS
-        stop_p   = entry_price * (1 + SHORT_STOP_LOSS_PCT)   # loss if price rises
-        target_p = entry_price * (1 - SHORT_TAKE_PROFIT_PCT) # profit if price falls
+        stop_p   = entry_price * (1 + SHORT_STOP_LOSS_PCT)
+        target_p = entry_price * (1 - SHORT_TAKE_PROFIT_PCT)
 
-    for i, (idx, row) in enumerate(future.iterrows()):
-        if i >= hold:
-            break
-        days_held += 1
-        exit_date  = idx.to_pydatetime()
-
-        if direction == "long":
-            if   row["Low"]  <= stop_p:   exit_price, exit_reason = stop_p,   "closed_sl"; break
-            elif row["High"] >= target_p: exit_price, exit_reason = target_p, "closed_tp"; break
-            else: exit_price = float(row["Close"])
+    if intraday is not None:
+        # ── Intraday simulation: 5-min bars, skip first bar of entry day ──
+        # Hold window: entry day + (hold-1) more trading days
+        daily_from_entry = history[history.index >= pd.Timestamp(entry_date)]
+        if len(daily_from_entry) == 0:
+            pass  # fall through with default values
         else:
-            if   row["High"] >= stop_p:   exit_price, exit_reason = stop_p,   "closed_sl"; break
-            elif row["Low"]  <= target_p: exit_price, exit_reason = target_p, "closed_tp"; break
-            else: exit_price = float(row["Close"])
+            hold_end = daily_from_entry.index[min(hold - 1, len(daily_from_entry) - 1)]
+            future_5m = intraday[
+                (intraday.index >= pd.Timestamp(entry_date)) &
+                (intraday.index.normalize() <= hold_end)
+            ].copy()
+
+            skip_first = True  # skip opening bar of entry day only
+            for idx, row in future_5m.iterrows():
+                exit_date = idx.to_pydatetime()
+                if skip_first:
+                    skip_first = False
+                    exit_price = float(row["Close"])
+                    continue
+
+                if direction == "long":
+                    if   row["Low"]  <= stop_p:   exit_price, exit_reason = stop_p,   "closed_sl"; break
+                    elif row["High"] >= target_p: exit_price, exit_reason = target_p, "closed_tp"; break
+                    else: exit_price = float(row["Close"])
+                else:
+                    if   row["High"] >= stop_p:   exit_price, exit_reason = stop_p,   "closed_sl"; break
+                    elif row["Low"]  <= target_p: exit_price, exit_reason = target_p, "closed_tp"; break
+                    else: exit_price = float(row["Close"])
+                if exit_reason != "closed_time":
+                    break
+
+            days_held = hold
+
+    else:
+        # ── Daily bar simulation (original) ──
+        future = history[history.index > pd.Timestamp(entry_date)].copy()
+        for i, (idx, row) in enumerate(future.iterrows()):
+            if i >= hold:
+                break
+            days_held += 1
+            exit_date  = idx.to_pydatetime()
+
+            if direction == "long":
+                if   row["Low"]  <= stop_p:   exit_price, exit_reason = stop_p,   "closed_sl"; break
+                elif row["High"] >= target_p: exit_price, exit_reason = target_p, "closed_tp"; break
+                else: exit_price = float(row["Close"])
+            else:
+                if   row["High"] >= stop_p:   exit_price, exit_reason = stop_p,   "closed_sl"; break
+                elif row["Low"]  <= target_p: exit_price, exit_reason = target_p, "closed_tp"; break
+                else: exit_price = float(row["Close"])
 
     if direction == "long":
         pnl_pct = round((exit_price - entry_price) / entry_price * 100, 3)
@@ -362,8 +427,9 @@ def run_backtest(days_back: int = 30, long_only: bool = False, short_only: bool 
              f"TP={SHORT_TAKE_PROFIT_PCT*100:.0f}%")
     log.info("=" * 65)
 
-    all_history  = fetch_all_history(fetch_days)
-    sample       = next(iter(all_history))
+    all_history    = fetch_all_history(fetch_days)
+    intraday_hist  = fetch_intraday_history() if INTRADAY_STOPS else {}
+    sample         = next(iter(all_history))
     trading_days = [
         d.to_pydatetime() for d in all_history[sample].index
         if scan_start <= d.to_pydatetime() <= scan_end
@@ -448,7 +514,8 @@ def run_backtest(days_back: int = 30, long_only: bool = False, short_only: bool 
             ep = float(future.iloc[0]["Open"])
             ed = future.index[0].to_pydatetime()
 
-            trade = simulate_trade(ticker, direction, ed, ep, all_history[ticker], signal, pos_size)
+            intraday = intraday_hist.get(ticker) if INTRADAY_STOPS else None
+            trade = simulate_trade(ticker, direction, ed, ep, all_history[ticker], signal, pos_size, intraday)
             all_trades.append(asdict(trade))
             slots_taken += 1
 
