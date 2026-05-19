@@ -44,7 +44,7 @@ LONG_SCORE_MIN       = 0.6   # minimum composite score to open a long
 LONG_MIN_SIGNALS     = 2      # minimum signals triggered
 LONG_HOLD_DAYS       = 3      # days to hold before time-exit
 LONG_STOP_LOSS_PCT   = 0.01   # stop out if price drops this much
-LONG_TAKE_PROFIT_PCT = 0.10   # take profit if price rises this much
+LONG_TAKE_PROFIT_PCT = 1   # take profit if price rises this much
 
 # ── Short parameters (tuned independently) ──
 SHORT_SCORE_MIN      = 0.6   # higher bar - shorts need stronger confirmation
@@ -52,7 +52,7 @@ SHORT_MIN_SIGNALS    = 2      # require at least 2 signals for shorts
 SHORT_HOLD_DAYS      = 2      # shorter hold - shorts can reverse fast
 SHORT_SAME_DAY_EXIT  = True  # True = exit short at close of entry day
 SHORT_STOP_LOSS_PCT  = 0.01   # stop out if price rises this much
-SHORT_TAKE_PROFIT_PCT= 0.10   # take profit if price falls this much
+SHORT_TAKE_PROFIT_PCT= 1   # take profit if price falls this much
 
 # ── Portfolio / capital limits ──
 TOTAL_CAPITAL        = 25_000  # total account size in USD
@@ -63,6 +63,10 @@ POSITION_SIZE_USD    = TOTAL_CAPITAL / MAX_POSITIONS  # used only when COMPOUNDI
 
 # If more than this many tickers signal same direction on one day = macro event
 MACRO_EVENT_THRESHOLD = 8
+
+# True = require at least one directional signal (gap/VPIN/ratio) — rejects
+# pure volume signals (vol_spike + block only) that carry no directional edge
+REQUIRE_DIRECTIONAL = True
 
 WATCHLIST_DEFAULT = [
     "NVDA","MSFT","AAPL","AMZN","META","GOOGL","TSLA","JPM",
@@ -251,10 +255,15 @@ def compute_signals(ticker: str, date: datetime, history: pd.DataFrame):
     long_score  = round(min(long_base  + long_bonus,  1.0), 3)
     short_score = round(min(short_base + short_bonus, 1.0), 3)
 
+    _long_dir  = {"cp_ratio_proxy", "vpin_bullish", "gap_up"}
+    _short_dir = {"put_ratio_proxy", "vpin_bearish", "gap_down"}
+    long_directional  = not REQUIRE_DIRECTIONAL or bool(set(lt) & _long_dir)
+    short_directional = not REQUIRE_DIRECTIONAL or bool(set(st) & _short_dir)
+
     long_sig  = BTSignal(ticker, date.strftime("%Y-%m-%d"), "long",  long_score,  lt, False) \
-                if long_score  >= LONG_SCORE_MIN  and len(lt) >= LONG_MIN_SIGNALS  else None
+                if long_score  >= LONG_SCORE_MIN  and len(lt) >= LONG_MIN_SIGNALS  and long_directional  else None
     short_sig = BTSignal(ticker, date.strftime("%Y-%m-%d"), "short", short_score, st, False) \
-                if short_score >= SHORT_SCORE_MIN and len(st) >= SHORT_MIN_SIGNALS else None
+                if short_score >= SHORT_SCORE_MIN and len(st) >= SHORT_MIN_SIGNALS and short_directional else None
 
     return long_sig, short_sig
 
@@ -416,7 +425,8 @@ def run_backtest(days_back: int = 30, long_only: bool = False, short_only: bool 
 
         # ── Merge and sort ALL candidates by score descending ──
         # Higher score = higher priority for a slot
-        all_candidates = [(t, s, "long")  for t, s in day_longs] +                          [(t, s, "short") for t, s in day_shorts]
+        all_candidates = [(t, s, "long")  for t, s in day_longs] + \
+                         [(t, s, "short") for t, s in day_shorts]
         all_candidates.sort(key=lambda x: x[1].composite_score, reverse=True)
 
         day_trades  = []

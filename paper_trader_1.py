@@ -64,6 +64,10 @@ POSITION_SIZE_USD    = TOTAL_CAPITAL / MAX_POSITIONS  # used only when COMPOUNDI
 # Macro event threshold (flag but still trade)
 MACRO_EVENT_THRESHOLD = 8
 
+# True = require at least one directional signal (gap/VPIN/ratio) — rejects
+# pure volume signals (vol_spike + block only) that carry no directional edge
+REQUIRE_DIRECTIONAL = True
+
 WATCHLIST = [
     "NVDA","MSFT","AAPL","AMZN","META","GOOGL","TSLA","JPM",
     "XOM","PFE","MRNA","AMD","NFLX","CRM","INTC","BAC","GS",
@@ -258,8 +262,13 @@ def compute_signals(ticker: str, history: pd.DataFrame):
     long_score  = round(min(long_base  + long_bonus,  1.0), 3)
     short_score = round(min(short_base + short_bonus, 1.0), 3)
 
-    long_result  = (long_score,  lt) if long_score  >= LONG_SCORE_MIN  and len(lt) >= LONG_MIN_SIGNALS  else None
-    short_result = (short_score, st) if short_score >= SHORT_SCORE_MIN and len(st) >= SHORT_MIN_SIGNALS else None
+    _long_dir  = {"cp_ratio_proxy", "vpin_bullish", "gap_up"}
+    _short_dir = {"put_ratio_proxy", "vpin_bearish", "gap_down"}
+    long_directional  = not REQUIRE_DIRECTIONAL or bool(set(lt) & _long_dir)
+    short_directional = not REQUIRE_DIRECTIONAL or bool(set(st) & _short_dir)
+
+    long_result  = (long_score,  lt) if long_score  >= LONG_SCORE_MIN  and len(lt) >= LONG_MIN_SIGNALS  and long_directional  else None
+    short_result = (short_score, st) if short_score >= SHORT_SCORE_MIN and len(st) >= SHORT_MIN_SIGNALS and short_directional else None
 
     return long_result, short_result
 
