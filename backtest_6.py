@@ -40,6 +40,7 @@ CALL_PUT_RATIO_MIN   = 3.0
 VPIN_THRESHOLD       = 0.65
 
 # ── Long parameters ──
+
 LONG_SCORE_MIN       = 0.6   # minimum composite score to open a long
 LONG_MIN_SIGNALS     = 2      # minimum signals triggered
 LONG_HOLD_DAYS       = 3      # days to hold before time-exit
@@ -56,7 +57,7 @@ SHORT_TAKE_PROFIT_PCT= 1   # take profit if price falls this much
 
 # ── Portfolio / capital limits ──
 TOTAL_CAPITAL        = 25_000  # total account size in USD
-MAX_POSITIONS        = 3      # maximum simultaneous open slots
+MAX_POSITIONS        = 2      # maximum simultaneous open slots
 SEK_USD_RATE         = 0.095  # used when WATCHLIST = WATCHLIST_OMXS30 (1 SEK → USD)
 COMPOUNDING         = True    # True = position size grows/shrinks with equity
 POSITION_SIZE_USD    = TOTAL_CAPITAL / MAX_POSITIONS  # used only when COMPOUNDING=False
@@ -408,7 +409,6 @@ def run_backtest(days_back: int = 30, long_only: bool = False, short_only: bool 
                 continue
             long_sig, short_sig = compute_signals(ticker, day, all_history[ticker])
             if long_sig  and "long"  in sides:
-                # skip if already holding a long on this ticker
                 if not (ticker in open_long and
                         (day - open_long[ticker]).days < LONG_HOLD_DAYS):
                     day_longs.append((ticker, long_sig))
