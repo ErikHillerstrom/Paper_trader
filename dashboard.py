@@ -13,11 +13,12 @@ from flask import Flask, render_template_string
 
 app = Flask(__name__)
 
-DATA_DIR    = Path("./data")
+BASE_DIR    = Path(__file__).parent
+DATA_DIR    = BASE_DIR / "data"
 TRADES_FILE = DATA_DIR / "paper_trades.json"
 QUEUE_FILE  = DATA_DIR / "signal_queue.json"
 SIGNALS_FILE= DATA_DIR / "signals_log.json"
-LOG_FILE    = Path("./cron.log")
+LOG_FILE    = BASE_DIR / "cron.log"
 
 TOTAL_CAPITAL = 25_000
 
@@ -47,22 +48,22 @@ TEMPLATE = """
   <style>
     body { background: #0d1117; color: #e6edf3; }
     .card { background: #161b22; border: 1px solid #30363d; }
-    .card-header { background: #21262d; border-bottom: 1px solid #30363d; font-weight: 600; }
+    .card-header { background: #21262d; border-bottom: 1px solid #30363d; font-weight: 600; color: #e6edf3; }
     table { font-size: 0.875rem; }
-    th { color: #8b949e; font-weight: 500; }
+    th { color: #cdd5df; font-weight: 500; }
     .badge-long  { background: #1f6feb; }
     .badge-short { background: #6e40c9; }
     .pos { color: #3fb950; font-weight: 600; }
     .neg { color: #f85149; font-weight: 600; }
     .tag { font-size: 0.7rem; background: #21262d; border: 1px solid #30363d;
            border-radius: 4px; padding: 1px 5px; margin: 1px; display: inline-block; }
-    pre { background: #0d1117; color: #8b949e; font-size: 0.75rem;
+    pre { background: #0d1117; color: #cdd5df; font-size: 0.75rem;
           max-height: 380px; overflow-y: auto; border-radius: 6px;
           padding: 12px; border: 1px solid #30363d; }
-    .stat-label { font-size: 0.75rem; color: #8b949e; }
+    .stat-label { font-size: 0.75rem; color: #cdd5df; }
     .stat-value { font-size: 1.5rem; font-weight: 700; }
     .navbar-brand { font-weight: 700; letter-spacing: .5px; }
-    .updated { font-size: 0.75rem; color: #8b949e; }
+    .updated { font-size: 0.75rem; color: #cdd5df; }
   </style>
 </head>
 <body>
@@ -92,13 +93,13 @@ TEMPLATE = """
     <div class="col-6 col-md-3">
       <div class="card p-3 text-center">
         <div class="stat-label">Open Positions</div>
-        <div class="stat-value">{{ open_count }}</div>
+        <div class="stat-value" style="color:#58a6ff">{{ open_count }}</div>
       </div>
     </div>
     <div class="col-6 col-md-3">
       <div class="card p-3 text-center">
         <div class="stat-label">Closed Trades</div>
-        <div class="stat-value">{{ closed_count }}</div>
+        <div class="stat-value" style="color:#ffffff">{{ closed_count }}</div>
       </div>
     </div>
   </div>
@@ -119,7 +120,7 @@ TEMPLATE = """
             <tbody>
             {% for t in open_trades %}
             <tr>
-              <td><strong>{{ t.ticker }}</strong></td>
+              <td><strong><a href="https://finance.yahoo.com/quote/{{ t.ticker }}" target="_blank" style="color:#58a6ff;text-decoration:none;">{{ t.ticker }}</a></strong></td>
               <td>
                 {% if t.direction == 'long' %}
                   <span class="badge badge-long">LONG</span>
@@ -136,7 +137,7 @@ TEMPLATE = """
             </tbody>
           </table>
           {% else %}
-          <p class="text-muted p-3 mb-0">No open positions.</p>
+          <p class="p-3 mb-0" style="color:#cdd5df">No open positions.</p>
           {% endif %}
         </div>
       </div>
@@ -170,7 +171,7 @@ TEMPLATE = """
             </tbody>
           </table>
           {% else %}
-          <p class="text-muted p-3 mb-0">Queue is empty (evening scan hasn't run yet today).</p>
+          <p class="p-3 mb-0" style="color:#cdd5df">Queue is empty (evening scan hasn't run yet today).</p>
           {% endif %}
         </div>
       </div>
@@ -190,7 +191,7 @@ TEMPLATE = """
             <tbody>
             {% for t in closed_trades %}
             <tr>
-              <td><strong>{{ t.ticker }}</strong></td>
+              <td><strong><a href="https://finance.yahoo.com/quote/{{ t.ticker }}" target="_blank" style="color:#58a6ff;text-decoration:none;">{{ t.ticker }}</a></strong></td>
               <td>
                 {% if t.direction == 'long' %}
                   <span class="badge badge-long">LONG</span>
@@ -214,7 +215,7 @@ TEMPLATE = """
             </tbody>
           </table>
           {% else %}
-          <p class="text-muted p-3 mb-0">No closed trades yet.</p>
+          <p class="p-3 mb-0" style="color:#cdd5df">No closed trades yet.</p>
           {% endif %}
         </div>
       </div>
@@ -241,17 +242,32 @@ TEMPLATE = """
 </html>
 """
 
+def normalize(trade):
+    return {
+        "ticker":      trade.get("ticker", "?"),
+        "direction":   trade.get("direction", "long"),
+        "status":      trade.get("status", "open"),
+        "entry_price": trade.get("entry_price") or 0.0,
+        "exit_price":  trade.get("exit_price")  or 0.0,
+        "entry_date":  trade.get("entry_date", ""),
+        "exit_date":   trade.get("exit_date", ""),
+        "score":       trade.get("score") or 0.0,
+        "signals":     trade.get("signals") or [],
+        "pnl_pct":     trade.get("pnl_pct") or 0.0,
+        "pnl_usd":     trade.get("pnl_usd") or 0.0,
+    }
+
 @app.route("/")
 def index():
-    trades = load_json(TRADES_FILE)
-    queue  = load_json(QUEUE_FILE)
+    trades = [normalize(t) for t in load_json(TRADES_FILE)]
+    queue  = [normalize(q) for q in load_json(QUEUE_FILE)]
 
-    open_trades   = [t for t in trades if t.get("status") == "open"]
-    closed_trades = [t for t in trades if t.get("status") != "open"]
-    closed_trades.sort(key=lambda t: t.get("exit_date", ""), reverse=True)
+    open_trades   = [t for t in trades if t["status"] == "open"]
+    closed_trades = [t for t in trades if t["status"] != "open"]
+    closed_trades.sort(key=lambda t: t["exit_date"], reverse=True)
     closed_trades = closed_trades[:20]
 
-    total_pnl = sum(t.get("pnl_usd", 0) for t in trades if t.get("status") != "open")
+    total_pnl = sum(t["pnl_usd"] for t in trades if t["status"] != "open")
     equity    = TOTAL_CAPITAL + total_pnl
 
     return render_template_string(
@@ -260,7 +276,7 @@ def index():
         closed_trades = closed_trades,
         queue         = queue,
         open_count    = len(open_trades),
-        closed_count  = sum(1 for t in trades if t.get("status") != "open"),
+        closed_count  = sum(1 for t in trades if t["status"] != "open"),
         total_pnl     = total_pnl,
         equity        = equity,
         total_capital = TOTAL_CAPITAL,
