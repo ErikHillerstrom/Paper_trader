@@ -1,8 +1,7 @@
 """
 Informed Trading Signal — Paper Trader v2
 ==========================================
-Two-phase daily workflow matching the backtest model exactly:
-
+Two-phase daily workflow matching the b
   PHASE 1 — Evening scan (run at 22:30 Swedish / 16:30 ET, after US close)
     - Computes signals on today's completed candle
     - Scores and queues the top signals (up to free slots) for tomorrow
@@ -45,7 +44,7 @@ LONG_SCORE_MIN       = 0.60
 LONG_MIN_SIGNALS     = 2
 LONG_HOLD_DAYS       = 3
 LONG_STOP_LOSS_PCT   = 0.01
-LONG_TAKE_PROFIT_PCT = 0.10
+LONG_TAKE_PROFIT_PCT = 0.5
 
 # Short parameters
 SHORT_SCORE_MIN      = 0.6
@@ -53,11 +52,11 @@ SHORT_MIN_SIGNALS    = 2
 SHORT_HOLD_DAYS      = 2
 SHORT_SAME_DAY_EXIT  = True  # True = close shorts at market close on entry day
 SHORT_STOP_LOSS_PCT  = 0.01
-SHORT_TAKE_PROFIT_PCT= 0.10
+SHORT_TAKE_PROFIT_PCT= 0.5
 
 # Portfolio limits
 TOTAL_CAPITAL        = 25_000
-MAX_POSITIONS        = 3
+MAX_POSITIONS        = 2
 COMPOUNDING          = True   # True = position size grows/shrinks with equity
 POSITION_SIZE_USD    = TOTAL_CAPITAL / MAX_POSITIONS  # used only when COMPOUNDING=False
 
@@ -183,11 +182,11 @@ def get_current_price(ticker: str) -> Optional[float]:
         return None
 
 def get_open_price(ticker: str) -> Optional[float]:
-    """Get today's opening price."""
+    """Get today's opening price (first 1-minute bar of the session)."""
     try:
-        hist = yf.Ticker(ticker).history(period="1d")
+        hist = yf.Ticker(ticker).history(period="1d", interval="1m")
         if not hist.empty:
-            return round(float(hist["Open"].iloc[-1]), 4)
+            return round(float(hist["Open"].iloc[0]), 4)
         return None
     except Exception:
         return None
