@@ -106,7 +106,7 @@ def save_json(path: Path, data):
 
 def get_history(ticker: str, days: int = 60) -> pd.DataFrame:
     """Fetch daily OHLCV history for a ticker."""
-    end   = datetime.now()
+    end   = datetime.now() + timedelta(days=1)  # yfinance end is exclusive; +1 includes today
     start = end - timedelta(days=days + 10)
     try:
         df = yf.download(
