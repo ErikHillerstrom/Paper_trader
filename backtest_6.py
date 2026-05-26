@@ -69,6 +69,10 @@ MACRO_EVENT_THRESHOLD = 8
 # pure volume signals (vol_spike + block only) that carry no directional edge
 REQUIRE_DIRECTIONAL = True
 
+# True  = hold period counts calendar days (matches paper_trader bug — weekends count)
+# False = hold period counts trading days only (correct behaviour, yfinance bars)
+CALENDAR_DAY_HOLD = False
+
 # True = use 5-minute intraday bars for SL/TP simulation and skip the first
 # bar (09:30–09:35 ET) to avoid stop-outs from opening-minute noise.
 # NOTE: yfinance only provides 60 days of 5-min data — use --days 60 or less.
@@ -351,11 +355,18 @@ def simulate_trade(ticker: str, direction: str, entry_date: datetime,
             days_held = hold
 
     else:
-        # ── Daily bar simulation (original) ──
-        future = history[history.index > pd.Timestamp(entry_date)].copy()
-        for i, (idx, row) in enumerate(future.iterrows()):
-            if i >= hold:
-                break
+        # ── Daily bar simulation ──
+        after_entry = history[history.index > pd.Timestamp(entry_date)].copy()
+
+        if CALENDAR_DAY_HOLD:
+            # Mirror paper_trader: exit at first trading day on/after entry + hold calendar days
+            cal_end = pd.Timestamp(entry_date) + timedelta(days=hold)
+            future  = after_entry[after_entry.index <= cal_end].copy()
+        else:
+            # Correct: limit to exactly `hold` trading-day bars
+            future = after_entry.head(hold)
+
+        for idx, row in future.iterrows():
             days_held += 1
             exit_date  = idx.to_pydatetime()
 

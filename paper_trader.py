@@ -381,7 +381,10 @@ def run_morning_open():
         direction  = t["direction"]
         hold_days  = LONG_HOLD_DAYS if direction == "long" else SHORT_HOLD_DAYS
         entry_dt   = datetime.strptime(t["entry_date"], "%Y-%m-%d")
-        days_held  = (datetime.now() - entry_dt).days
+        # Count trading days elapsed (exclude weekends + holidays) by checking
+        # how many market-open bars exist between entry and today
+        hist_check = get_history(t["ticker"], days=hold_days + 10)
+        days_held  = int((hist_check.index > pd.Timestamp(entry_dt)).sum())
 
         if direction == "long":
             stop_p   = entry * (1 - LONG_STOP_LOSS_PCT)
