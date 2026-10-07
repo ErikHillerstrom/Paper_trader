@@ -1,0 +1,2 @@
+{% extends "base.html" %}{% block body %}<h2>Job runs</h2><div class="card"><table>{% for r in runs %}<tr><td>{{ r['started_at'][:19] }}</td><td>{{ r['job'] }}</td><td>{{ r['status'] }}</td><td>{{ r['message'] }}</td></tr>{% endfor %}</table></div>
+<h2>Log (last 200 lines)</h2><div class="card"><pre>{{ text }}</pre></div>{% endblock %}

@@ -1,0 +1,7 @@
+{% extends "base.html" %}{% block body %}<h2>Stored data</h2>
+<p class="mut">{{ counts[0] }} {{ sym }} closes, {{ counts[1] }} VIX closes, {{ counts[2] }} Fear &amp; Greed readings (newest first, last 15 shown)</p>
+<div class="grid">
+<div class="card"><strong>{{ sym }} close</strong><table>{% for d, v in px %}<tr><td>{{ d.strftime('%Y-%m-%d') }}</td><td>{{ '%.2f'|format(v) }}</td></tr>{% endfor %}</table></div>
+<div class="card"><strong>VIX close</strong><table>{% for d, v in vx %}<tr><td>{{ d.strftime('%Y-%m-%d') }}</td><td>{{ '%.2f'|format(v) }}</td></tr>{% endfor %}</table></div>
+<div class="card"><strong>Fear &amp; Greed</strong><table>{% for d, v in fg %}<tr><td>{{ d.strftime('%Y-%m-%d') }}</td><td>{{ '%.1f'|format(v) }}</td></tr>{% endfor %}</table></div>
+</div>{% endblock %}

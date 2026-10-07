@@ -1,0 +1,38 @@
+<h2>Daily report: Nasdaq-100 &ndash; {{ r.date }}</h2>
+<p><strong>{{ r.takeaway }}</strong></p>
+<pre style="background:#f3f4f6;color:#111;padding:12px;border-radius:6px;white-space:pre-wrap;font-size:14px">{{ r.signal.block }}</pre>
+{% for n in r.signal.notes %}<p><em>Note: {{ n }}</em></p>{% endfor %}
+
+<h3>Evening picture (last US session)</h3>
+{% if r.market.available %}
+<p>QQQ closed at <strong>${{ '%.2f'|format(r.market.close) }}</strong> on {{ r.market.date }}
+({{ '%+.2f'|format(r.market.change) }}% on the day).<br>
+SMA50 ${{ '%.2f'|format(r.market.sma50) }} ({{ '%+.2f'|format(r.market.dist50) }}% from close) &middot;
+SMA200 ${{ '%.2f'|format(r.market.sma200) }} ({{ '%+.2f'|format(r.market.dist200) }}% from close)</p>
+{% for x in r.market.near %}<p>&#9888; {{ x }}</p>{% endfor %}
+{% if r.market.cross %}<p>&#9888; <strong>{{ r.market.cross }}</strong></p>{% endif %}
+{% else %}<p>Price data unavailable this run.</p>{% endif %}
+
+<h3>Sentiment</h3>
+<p>
+{% if r.sentiment.vix %}VIX {{ '%.2f'|format(r.sentiment.vix.value) }} on {{ r.sentiment.vix.date }}
+({{ '%+.2f'|format(r.sentiment.vix.change) }}), {{ r.sentiment.vix.label }}.<br>{% else %}VIX: unavailable this run.<br>{% endif %}
+{% if r.sentiment.fng %}Fear &amp; Greed {{ '%.1f'|format(r.sentiment.fng.score) }} ({{ r.sentiment.fng.label }}) on {{ r.sentiment.fng.date }};
+previous reading {{ '%.1f'|format(r.sentiment.fng.prev) }}{% if r.sentiment.fng.week is not none %}, week earlier {{ '%.1f'|format(r.sentiment.fng.week) }}{% endif %}.
+{% else %}Fear &amp; Greed: unavailable this run.{% endif %}
+{% if r.sentiment.shift %}<br><em>{{ r.sentiment.shift }}.</em>{% endif %}</p>
+
+<h3>News &ndash; US session and evening</h3>
+<ul>{% for i in r.news.session %}<li><a href="{{ i.link }}">{{ i.title }}</a> <small>({{ i.source }}, {{ i.time }})</small></li>
+{% else %}<li>Nothing notable found.</li>{% endfor %}</ul>
+
+<h3>Morning picture (since the US close)</h3>
+<ul>{% for i in r.news.morning %}<li><a href="{{ i.link }}">{{ i.title }}</a> <small>({{ i.source }}, {{ i.time }})</small></li>
+{% else %}<li>Nothing notable found.</li>{% endfor %}</ul>
+
+<h3>Today's calendar</h3>
+<ul>{% for e in r.calendar.earnings %}<li>{{ e }}</li>{% endfor %}<li>{{ r.calendar.note }}</li></ul>
+
+{% if r.issues %}<h3>Data issues</h3><ul>{% for i in r.issues %}<li>{{ i }}</li>{% endfor %}</ul>{% endif %}
+{% if r.web_url %}<p><a href="{{ r.web_url }}">Open dashboard</a></p>{% endif %}
+<p><small>{{ disclaimer }}</small></p>

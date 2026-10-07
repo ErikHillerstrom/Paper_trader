@@ -1,0 +1,13 @@
+{% extends "base.html" %}{% block body %}
+<div class="card"><strong>Next scheduled runs</strong>
+<table>{% for id, t in jobs %}<tr><td>{{ id }}</td><td>{{ t.strftime('%a %Y-%m-%d %H:%M %Z') if t else 'paused' }}</td></tr>{% endfor %}</table>
+<form method="post" action="/run/daily" style="display:inline"><input type="hidden" name="csrf" value="{{ csrf }}"><button name="send" value="0">Run daily report (no email)</button></form>
+<form method="post" action="/run/daily" style="display:inline"><input type="hidden" name="csrf" value="{{ csrf }}"><button name="send" value="1">Run + email</button></form>
+<form method="post" action="/run/alerts" style="display:inline"><input type="hidden" name="csrf" value="{{ csrf }}"><button name="send" value="0">Run alert scan (no email)</button></form>
+</div>
+{% if rep %}<p class="mut">Latest report: {{ rep['date'] }}{% if rep['date'] != today %} (not today){% endif %}, generated {{ rep['created_at'] }}</p>
+<div class="card">{{ rep['html']|safe }}</div>
+{% else %}<div class="card">No report yet - press "Run daily report".</div>{% endif %}
+<div class="card"><strong>Recent alerts</strong><table>{% for a in alerts %}<tr><td>{{ a['created_at'][:16] }}</td><td>{{ a['subject'] }}</td><td>{{ 'emailed' if a['emailed'] else 'not emailed' }}</td></tr>{% else %}<tr><td>None yet.</td></tr>{% endfor %}</table></div>
+<div class="card"><strong>Recent job runs</strong><table>{% for r in runs %}<tr><td>{{ r['started_at'][:16] }}</td><td>{{ r['job'] }}</td><td>{{ r['status'] }}</td><td>{{ r['message'] }}</td></tr>{% endfor %}</table></div>
+{% endblock %}

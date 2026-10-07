@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Nasdaq Monitor</title>
+<style>
+:root{--bg:#f7f7f8;--fg:#1c1d20;--card:#fff;--line:#dcdde1;--accent:#1d4ed8;--mut:#6b7280}
+@media (prefers-color-scheme:dark){:root{--bg:#121316;--fg:#e8e9ec;--card:#1b1c21;--line:#2f3138;--accent:#7aa2ff;--mut:#9aa0ab}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.5 system-ui,sans-serif}
+nav{display:flex;gap:16px;flex-wrap:wrap;padding:12px 16px;border-bottom:1px solid var(--line);background:var(--card)}
+nav a{color:var(--accent);text-decoration:none;font-weight:600}main{max-width:900px;margin:0 auto;padding:16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:12px 16px;margin:12px 0}
+table{border-collapse:collapse;width:100%}td,th{border-bottom:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top}
+pre{white-space:pre-wrap;overflow-x:auto}a{color:var(--accent)}small,.mut{color:var(--mut)}
+input,textarea,select{background:var(--bg);color:var(--fg);border:1px solid var(--line);border-radius:4px;padding:6px;font:inherit}
+input[type=text],input[type=number],textarea{width:100%}textarea{font-family:ui-monospace,monospace;min-height:340px}
+button{background:var(--accent);color:#fff;border:0;border-radius:4px;padding:8px 14px;font:inherit;cursor:pointer}
+.flash{background:#fef3c7;color:#78350f;border-radius:6px;padding:8px 12px;margin:8px 0}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px 16px}label{display:block;font-size:13px;color:var(--mut)}
+</style></head><body>
+<nav><a href="/">Today</a><a href="/reports">Reports</a><a href="/alerts">Alerts</a><a href="/data">Data</a><a href="/logs">Logs</a><a href="/settings">Settings</a></nav>
+<main>{% for m in get_flashed_messages() %}<div class="flash">{{ m }}</div>{% endfor %}{% block body %}{% endblock %}</main>
+</body></html>

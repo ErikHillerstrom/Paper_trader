@@ -1,0 +1,10 @@
+pandas>=2.0
+numpy
+requests>=2.31
+PyYAML>=6.0
+yfinance>=0.2.40
+Flask>=3.0
+APScheduler>=3.10,<4
+waitress>=3.0
+defusedxml>=0.7
+tzdata

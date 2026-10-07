@@ -1,0 +1,4 @@
+{% extends "base.html" %}{% block body %}<h2>Saved reports</h2><div class="card"><table>
+<tr><th>Date</th><th>Signal</th><th>Target</th></tr>
+{% for r in rows %}<tr><td><a href="/report/{{ r['date'] }}">{{ r['date'] }}</a></td><td>{{ r['signal'] }}</td><td>{{ r['target'] }}</td></tr>{% else %}<tr><td>None yet.</td></tr>{% endfor %}
+</table></div>{% endblock %}

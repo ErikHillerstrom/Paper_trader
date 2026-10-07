@@ -1,0 +1,24 @@
+{% extends "base.html" %}{% block body %}<h2>Settings</h2>
+<form method="post" class="card"><input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="mode" value="form">
+<h3>Daily report</h3><div class="grid">
+<div><label>Time (HH:MM, {{ cfg.timezone }})</label><input type="text" name="daily_time" value="{{ cfg.daily.time }}"></div>
+<div><label>Days (mon-fri, mon,wed,fri)</label><input type="text" name="daily_days" value="{{ cfg.daily.days }}"></div>
+<div><label><input type="checkbox" name="daily_send" {{ 'checked' if cfg.daily.send_email }}> email the report</label>
+<label><input type="checkbox" name="daily_catchup" {{ 'checked' if cfg.daily.catch_up }}> run on startup if missed</label></div></div>
+<h3>Alert scan</h3><div class="grid">
+<div><label><input type="checkbox" name="alerts_enabled" {{ 'checked' if cfg.alerts.enabled }}> enabled</label></div>
+<div><label>Days</label><input type="text" name="alerts_days" value="{{ cfg.alerts.days }}"></div>
+<div><label>Every N hours</label><input type="number" name="alerts_every_hours" value="{{ cfg.alerts.every_hours }}"></div>
+<div><label>From hour</label><input type="number" name="alerts_start_hour" value="{{ cfg.alerts.start_hour }}"></div>
+<div><label>To hour</label><input type="number" name="alerts_end_hour" value="{{ cfg.alerts.end_hour }}"></div>
+<div><label>At minute</label><input type="number" name="alerts_minute" value="{{ cfg.alerts.minute }}"></div></div>
+<h3>Alert thresholds</h3><div class="grid">
+{% for k, v in cfg.alerts.thresholds.items() %}<div><label>{{ k }}</label><input type="number" step="any" name="th_{{ k }}" value="{{ v }}"></div>{% endfor %}</div>
+<h3>Email</h3><div class="grid"><div><label>Recipients (comma separated)</label><input type="text" name="email_to" value="{{ cfg.email.to|join(', ') }}"></div>
+<div><label><input type="checkbox" name="email_enabled" {{ 'checked' if cfg.email.enabled }}> sending enabled</label></div></div>
+<p class="mut">The email password lives in the .env file on the server and cannot be changed here.</p>
+<button>Save and apply schedule</button></form>
+<form method="post" class="card"><input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="mode" value="raw">
+<h3>Advanced: full config (YAML)</h3><p class="mut">News feeds, keywords, SMTP host, watched members. Saving rewrites the file without comments.</p>
+<textarea name="raw" spellcheck="false">{{ raw }}</textarea><p><button>Validate and save YAML</button></p></form>
+{% endblock %}

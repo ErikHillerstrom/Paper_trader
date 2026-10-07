@@ -1,0 +1,3 @@
+{% extends "base.html" %}{% block body %}<h2>Alert history</h2>
+{% for a in rows %}<div class="card"><strong>{{ a['subject'] }}</strong> <small>{{ a['created_at'] }} &middot; {{ a['kind'] }} &middot; {{ 'emailed' if a['emailed'] else 'not emailed' }}</small><pre>{{ a['body'] }}</pre></div>{% else %}<div class="card">No alerts yet.</div>{% endfor %}
+{% endblock %}

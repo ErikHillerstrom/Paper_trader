@@ -1,0 +1,17 @@
+[Unit]
+Description=Nasdaq-100 monitor (scheduler + dashboard)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=__USER__
+WorkingDirectory=__DIR__
+ExecStart=__DIR__/.venv/bin/python -m monitor serve
+Restart=on-failure
+RestartSec=30
+# Prefer the laptop's timezone-independent behaviour: the app uses the timezone in config.yaml
+Environment=PYTHONUNBUFFERED=1
+
+[Install]
+WantedBy=multi-user.target

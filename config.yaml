@@ -1,0 +1,85 @@
+timezone: Europe/Stockholm
+symbol: QQQ
+email:
+  enabled: true
+  smtp_host: smtp.gmail.com
+  smtp_port: 465
+  security: ssl
+  username: you@gmail.com
+  from: you@gmail.com
+  to:
+  - a@b.se
+daily:
+  time: 07:45
+  days: mon-fri
+  catch_up: false
+  send_email: true
+  news_lookback_hours: 20
+  news_max_items: 8
+alerts:
+  enabled: true
+  days: mon-fri
+  every_hours: 2
+  start_hour: 10
+  end_hour: 22
+  minute: 10
+  thresholds:
+    qqq_move_pct: 2.0
+    vix_spike_pct: 15.0
+    vix_above: 25.0
+    sma_proximity_pct: 1.0
+    fng_change_points: 10.0
+    fng_extreme_low: 25.0
+    fng_extreme_high: 75.0
+    member_move_pct: 5.0
+  members:
+  - NVDA
+  - MSFT
+  - AAPL
+  - AMZN
+  - META
+  - GOOGL
+  - AVGO
+  - TSLA
+news:
+  keywords:
+  - Fed
+  - Federal Reserve
+  - rate
+  - inflation
+  - CPI
+  - jobs
+  - Nvidia
+  - Microsoft
+  - Apple
+  - Amazon
+  - Meta
+  - Alphabet
+  - Google
+  - Broadcom
+  - Tesla
+  - tariff
+  - export
+  - antitrust
+  - chip
+  - semiconductor
+  - earnings
+  - guidance
+  - Nasdaq
+  - AI
+  feeds:
+  - name: CNBC Top News
+    url: https://www.cnbc.com/id/100003114/device/rss/rss.html
+  - name: CNBC Technology
+    url: https://www.cnbc.com/id/19854910/device/rss/rss.html
+  - name: MarketWatch
+    url: https://feeds.content.dowjones.io/public/rss/mw_topstories
+  - name: Federal Reserve
+    url: https://www.federalreserve.gov/feeds/press_all.xml
+  - name: Google News - Big Tech
+    url: https://news.google.com/rss/search?q=Nasdaq+OR+Nvidia+OR+Microsoft+OR+Apple+OR+Fed+when:1d&hl=en-US&gl=US&ceid=US:en
+web:
+  host: 0.0.0.0
+  port: 8080
+  username: admin
+  public_url: ''
