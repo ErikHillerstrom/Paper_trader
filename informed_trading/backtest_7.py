@@ -28,7 +28,7 @@ init(autoreset=True)
 
 # ── Config ─────────────────────────────────────────────────────────────────────
 
-# Alpaca API credentials (set as env vars or paste directly for local testing)
+# Alpaca API credentials — set ALPACA_API_KEY / ALPACA_API_SECRET as env vars (never commit keys)
 ALPACA_API_KEY    = os.environ.get("ALPACA_API_KEY",    "")
 ALPACA_API_SECRET = os.environ.get("ALPACA_API_SECRET", "")
 

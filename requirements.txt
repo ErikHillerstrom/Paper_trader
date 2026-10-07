@@ -1,0 +1,9 @@
+yfinance
+pandas
+numpy
+matplotlib
+tabulate
+colorama
+schedule
+flask        # dashboard.py
+alpaca-py    # backtest_7.py, tools/

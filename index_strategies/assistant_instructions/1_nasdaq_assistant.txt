@@ -1,0 +1,55 @@
+In addition to the daily Nasdaq 100 price and news update, compute and report a trading signal for the Nasdaq 100 (tracked via the QQQ ETF), using the exact rule below. Do not improvise, loosen or "interpret" the rule, and do not let news override it.
+
+DATA YOU NEED EACH DAY
+- QQQ daily closing prices for at least the last 260 trading days.
+- CNN Fear & Greed Index daily scores (0-100) for at least the last 3 months. Use the CNN stock-market Fear & Greed Index ONLY, NOT the crypto Fear & Greed index (alternative.me), which is a different thing.
+- If you cannot get Fear & Greed history, use the VIX fallback described at the bottom.
+- Use the most recent completed trading day's close. If you have code/analysis tools, calculate the averages yourself from the price data; otherwise use a reputable source that publishes QQQ's 50-day and 200-day simple moving averages.
+
+DEFINITIONS
+- SMA50 / SMA200 = simple average of QQQ's last 50 / 200 daily closes.
+- Gap = SMA50 / SMA200 - 1, in percent.
+- Uptrend = SMA50 above SMA200. Downtrend = SMA50 below SMA200.
+- Death cross = the first close where SMA50 falls below SMA200 (was above the day before).
+- Golden cross = the first close where SMA50 rises above SMA200.
+
+THE RULE (determines the TARGET position: INVESTED or CASH)
+A. If in an uptrend: TARGET = INVESTED.
+B. If in a downtrend: find the date of the most recent death cross (call it D).
+   1. Take the LOWEST Fear & Greed score over the 10 trading days ending on D.
+   2. If that lowest score was 25 or higher: TARGET = CASH (normal death-cross exit).
+   3. If it was below 25 (extreme fear at the cross), the death cross is "skipped":
+      - If Fear & Greed has closed at 50 or higher on ANY day after D up to and including today: TARGET = CASH (fear has faded, exit now).
+      - Otherwise: TARGET = INVESTED (keep holding, waiting for fear to fade or for a golden cross).
+
+TODAY'S ACTION
+Apply the rule both for today's close and for the previous trading day's close.
+- Yesterday CASH, today INVESTED: "BUY at tomorrow's open"
+- Yesterday INVESTED, today CASH: "SELL at tomorrow's open"
+- Both INVESTED: "HOLD"
+- Both CASH: "STAY IN CASH"
+Signals are based on the close and acted on at the next market open, never intraday.
+
+WHAT TO REPORT (put this block at the very top of the update)
+  SIGNAL: [HOLD / BUY / SELL / STAY IN CASH]
+  Target position: [INVESTED / CASH]
+  QQQ close: $___ | SMA50: $___ | SMA200: $___ | Gap: ___%
+  Fear & Greed: ___ (rating) | lowest of last 10 days: ___
+  Last cross: [death/golden] on [date]
+  Why: one or two sentences tracing which branch of the rule applied.
+Then add a "Watch" line when relevant:
+  - Gap is under +2% in an uptrend: "Death cross may be approaching." Informational only. Backtests showed acting early does NOT help, so do not recommend selling early.
+  - In a skipped death cross: how far Fear & Greed is from 50.
+  - Gap is between -2% and 0% in a downtrend: "Golden cross may be approaching."
+Then continue with the usual price and news summary.
+
+GUARDRAILS
+- If any required number is missing or you are unsure of it, say so, show what you have, and output "SIGNAL: UNCERTAIN - no action" instead of guessing.
+- Never change the signal because of news, sentiment or your own market view. You may comment on news, but the signal comes only from the rule.
+- Show the numbers every day so I can verify them.
+
+VIX FALLBACK (only if CNN Fear & Greed history is unavailable; say that you used it)
+Use the VIX daily close compared with its own last 252 trading days:
+- "Below 25" (extreme fear) = VIX close is higher than 75% of its last 252 closes.
+- "50 or higher" (fear faded) = VIX close is at or below the median of its last 252 closes.
+For step B1, extreme fear at the cross = VIX was in that top 25% on any of the 10 trading days ending on D.

@@ -1,6 +1,6 @@
 # AWS EC2 Setup — Automated Paper Trader
 
-Runs `paper_trader_1.py` on a free-tier AWS EC2 instance with cron scheduling.
+Runs `informed_trading/paper_trader_1.py` on a free-tier AWS EC2 instance with cron scheduling.
 The evening scan fires at 22:30 and the morning open at 15:35 (Stockholm time) on weekdays.
 
 ---
@@ -10,7 +10,7 @@ The evening scan fires at 22:30 and the morning open at 15:35 (Stockholm time) o
 - An AWS account (free tier covers 750 hrs/month for 12 months)
 - The `.pem` key file downloaded during instance creation
 - Windows 10/11 with OpenSSH (built-in)
-- Gmail App Password set up (see [Email notifications](README.md#email-notifications) in the main README)
+- Gmail App Password set up (see [Email notifications](../README.md#email-notifications) in the main README)
 
 ---
 
@@ -39,7 +39,7 @@ The evening scan fires at 22:30 and the morning open at 15:35 (Stockholm time) o
 Copy the downloaded `.pem` file to your `.ssh` folder for a clean path:
 
 ```powershell
-Copy-Item "C:\Users\<you>\OneDrive\Dokument\paper-trader-key.pem" "C:\Users\<you>\.ssh\paper-trader-key.pem"
+Copy-Item "C:\Users\<you>\Downloads\paper-trader-key.pem" "C:\Users\<you>\.ssh\paper-trader-key.pem"
 ```
 
 ---
@@ -77,7 +77,7 @@ In a **new local PowerShell window** (keep the SSH session open), run from your 
 # mkdir -p ~/paper_trader
 
 # Then transfer all .py files from your local machine
-scp -i "C:\Users\<you>\.ssh\paper-trader-key.pem" C:\Users\<you>\PycharmProjects\test_model\files\*.py ubuntu@<YOUR-PUBLIC-IP>:~/paper_trader/
+scp -i "C:\Users\<you>\.ssh\paper-trader-key.pem" .\informed_trading\*.py ubuntu@<YOUR-PUBLIC-IP>:~/paper_trader/
 ```
 
 ---
@@ -162,7 +162,7 @@ cat ~/paper_trader/cron.log
 
 **Re-upload files after local edits:**
 ```powershell
-scp -i "C:\Users\<you>\.ssh\paper-trader-key.pem" C:\Users\<you>\PycharmProjects\test_model\files\*.py ubuntu@<YOUR-PUBLIC-IP>:~/paper_trader/
+scp -i "C:\Users\<you>\.ssh\paper-trader-key.pem" .\informed_trading\*.py ubuntu@<YOUR-PUBLIC-IP>:~/paper_trader/
 ```
 
 **Do not stop the instance** from the AWS console — stopping it pauses the cron jobs and may assign a new public IP on restart. Leave it running continuously.

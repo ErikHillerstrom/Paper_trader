@@ -14,7 +14,7 @@ from tabulate import tabulate
 from colorama import Fore, Style, init
 init(autoreset=True)
 
-DATA_DIR     = Path("./data")
+DATA_DIR     = Path(__file__).parent / "data"
 TRADES_FILE  = DATA_DIR / "paper_trades.json"
 SIGNALS_FILE = DATA_DIR / "signals_log.json"
 

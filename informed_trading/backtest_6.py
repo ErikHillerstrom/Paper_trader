@@ -106,7 +106,7 @@ WATCHLIST_OMXS30 = [
 WATCHLIST = WATCHLIST_DEFAULT
 
 
-DATA_DIR        = Path("./data")
+DATA_DIR        = Path(__file__).parent / "data"
 DATA_DIR.mkdir(exist_ok=True)
 BT_TRADES_FILE  = DATA_DIR / "backtest_trades_ls.json"
 BT_SUMMARY_FILE = DATA_DIR / "backtest_summary_ls.csv"

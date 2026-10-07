@@ -1,20 +1,24 @@
 """
 Alpaca API test — 5-minute bar fetch
-Fill in your API key and secret below, then run:
+Set ALPACA_API_KEY and ALPACA_API_SECRET as environment variables, then run:
     python alpaca_test.py
 """
 
 from alpaca.data.historical import StockHistoricalDataClient
 from alpaca.data.requests import StockBarsRequest
 from alpaca.data.timeframe import TimeFrame, TimeFrameUnit
+import os
 from datetime import datetime, timedelta
 
 # ── Config ────────────────────────────────────────────────────────────────────
-API_KEY    = ""
-API_SECRET = ""
+API_KEY    = os.environ.get("ALPACA_API_KEY", "")
+API_SECRET = os.environ.get("ALPACA_API_SECRET", "")
 TICKER     = "AAPL"
 DAYS_BACK  = 365 * 5   # how many calendar days to fetch
 # ─────────────────────────────────────────────────────────────────────────────
+
+if not (API_KEY and API_SECRET):
+    raise SystemExit("Set ALPACA_API_KEY and ALPACA_API_SECRET environment variables first.")
 
 client = StockHistoricalDataClient(API_KEY, API_SECRET)
 

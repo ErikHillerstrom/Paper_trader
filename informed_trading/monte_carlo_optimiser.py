@@ -38,7 +38,7 @@ init(autoreset=True)
 
 # ── Paths ──────────────────────────────────────────────────────────────────────
 
-DATA_DIR = Path("./data")
+DATA_DIR = Path(__file__).parent / "data"
 DATA_DIR.mkdir(exist_ok=True)
 MC_RESULTS_FILE  = DATA_DIR / "mc_results.json"
 MC_BEST_FILE     = DATA_DIR / "mc_best_params.json"
