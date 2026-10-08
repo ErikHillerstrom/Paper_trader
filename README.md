@@ -128,6 +128,23 @@ Options:
 - `--trade-ticker QLD` computes the signal from the unleveraged index but holds a leveraged
   ETF while risk-on. This keeps the leveraged ETF's volatility decay out of the choppy
   periods the trend filter already avoids.
+- `--fear-skip` applies the crossover + fear skip rule from [1.3](#13-combined-rule-crossover--fear-skip-live-signal).
+- `--safe-trend` holds the safe asset only while it closes above its own 200-day SMA, and cash otherwise.
+- `--compare` runs the 1x and 2x (QLD/SSO) versions of the crossover, the fear skip and the TLT
+  variants side by side over the window where the 2x ETF exists.
+
+Every run charges 0.05% per trade and pays the T-bill rate on cash.
+
+**Finding (2006–2026, `--compare`):** TLT as the safe asset only helps with the trend check,
+and then only by 0.3–0.4 points of CAGR over cash earning T-bill interest. Plain TLT
+hurt in 2022, when bonds fell with stocks. The live rule stays in cash.
+
+| Nasdaq 100, $20k from Jun 2006 | 1x QQQ | 2x QLD |
+|---|---|---|
+| Crossover | $301k · 14.3% CAGR · −29% DD | $1.41M · 23.3% · −52% |
+| + fear skip | $510k · 17.3% · −29% | $3.71M · 29.3% · −52% |
+| + fear skip, TLT if trend up | $538k · 17.6% · −29% | $3.91M · 29.7% · −52% |
+| Buy & hold | $458k · 16.7% · −53% | $2.03M · 25.6% · −83% |
 
 ```bash
 cd index_strategies
@@ -137,6 +154,8 @@ python sma_crossover_backtest.py --ticker QQQ --safe-ticker TLT
 python sma_crossover_backtest.py --ticker QQQ --trade-ticker QLD
 python sma_crossover_backtest.py --fast 50 --slow 200 --capital 20000 --start 2015-01-01
 python sma_crossover_backtest.py --chart
+python sma_crossover_backtest.py --ticker QQQ --trade-ticker QLD --fear-skip --safe-ticker TLT --safe-trend
+python sma_crossover_backtest.py --ticker QQQ --compare                 # 1x vs 2x table, add --chart for a plot
 ```
 
 Output: `data/sma_backtest_trades.json` and `data/sma_backtest_summary.csv`.
